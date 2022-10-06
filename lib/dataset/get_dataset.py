@@ -50,8 +50,14 @@ def get_datasets(args):
         )    
     elif args.dataname == "fashion_attr":
         from dataset.fashion_attr import FashionAttributeMultiLabelDataset
-        FashionAttributeMultiLabelDataset(
-            args.label_file, args.label_type, args.dataset_dir, train_data_transform
+        train_label_file, val_label_file = args.label_file.split(",")
+        train_dataset_dir, val_dataset_dir = args.dataset_dir.split(",")
+        train_dataset = FashionAttributeMultiLabelDataset(
+            train_label_file, args.label_type, train_dataset_dir, train_data_transform
+        )
+
+        val_dataset = FashionAttributeMultiLabelDataset(
+            val_label_file, args.label_type, val_dataset_dir, test_data_transform
         )
     else:
         raise NotImplementedError("Unknown dataname %s" % args.dataname)
