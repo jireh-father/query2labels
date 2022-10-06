@@ -48,7 +48,11 @@ def get_datasets(args):
             input_transform=test_data_transform,
             labels_path='data/coco/val_label_vectors_coco14.npy',
         )    
-
+    elif args.dataname == "fashion_attr":
+        from dataset.fashion_attr import FashionAttributeMultiLabelDataset
+        FashionAttributeMultiLabelDataset(
+            args.label_file, args.label_type, args.dataset_dir, train_data_transform
+        )
     else:
         raise NotImplementedError("Unknown dataname %s" % args.dataname)
 
