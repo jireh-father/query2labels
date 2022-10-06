@@ -51,7 +51,7 @@ class FashionAttributeMultiLabelDataset(ImageFolder):
                 path = os.path.join(self.root, path)
                 sample = np.array(self.loader(path))
                 if self.transform is not None:
-                    sample = self.transform(image=sample)['image']
+                    sample = self.transform(sample)
                 return sample, np.array(target, dtype=np.float32)
             except Exception as e:
                 # traceback.print_exc()
