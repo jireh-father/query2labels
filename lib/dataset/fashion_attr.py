@@ -49,7 +49,7 @@ class FashionAttributeMultiLabelDataset(ImageFolder):
                 for l in multi_labels:
                     target[l] = 1
                 path = os.path.join(self.root, path)
-                sample = np.array(self.loader(path))
+                sample = self.loader(path)
                 if self.transform is not None:
                     sample = self.transform(sample)
                 return sample, np.array(target, dtype=np.float32)
