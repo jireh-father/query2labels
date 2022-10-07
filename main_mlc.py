@@ -33,6 +33,7 @@ from utils.metric import voc_mAP
 from utils.misc import clean_state_dict
 from utils.slconfig import get_raw_dict
 
+from sklearn.metrics import accuracy_score
 
 def parser_args():
     parser = argparse.ArgumentParser(description='Query2Label MSCOCO Training')
@@ -470,9 +471,10 @@ def train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, ar
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-
+        target_list = target.numpy()
         images = images.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
+
 
         # compute output
         with torch.cuda.amp.autocast(enabled=args.amp):
@@ -480,6 +482,10 @@ def train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, ar
             loss = criterion(output, target)
             if args.loss_dev > 0:
                 loss *= args.loss_dev
+
+        output = torch.sigmoid(output)
+        preds = torch.round(output)
+        pred_list = preds.detach().cpu().numpy()
 
         # record loss
         losses.update(loss.item(), images.size(0))
@@ -503,6 +509,7 @@ def train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, ar
 
         if i % args.print_freq == 0:
             progress.display(i, logger)
+            logger.info("acc(exact match ratio): {}".format(accuracy_score(target_list, pred_list)))
 
     return losses.avg
 
@@ -526,9 +533,12 @@ def validate(val_loader, model, criterion, args, logger):
     saveflag = False
     model.eval()
     saved_data = []
+    target_list = []
+    pred_list = []
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
+            target_list += list(target.detach().numpy())
             images = images.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
 
@@ -541,6 +551,9 @@ def validate(val_loader, model, criterion, args, logger):
                 output_sm = nn.functional.sigmoid(output)
                 if torch.isnan(loss):
                     saveflag = True
+
+            preds = torch.round(output_sm)
+            pred_list += list(preds.detach().cpu().numpy())
 
             # record loss
             losses.update(loss.item(), images.size(0))
@@ -584,6 +597,7 @@ def validate(val_loader, model, criterion, args, logger):
             
             logger.info("  mAP: {}".format(mAP))
             logger.info("   aps: {}".format(np.array2string(aps, precision=5)))
+            logger.info("acc(exact match ratio): {}".format(accuracy_score(target_list, pred_list)))
         else:
             mAP = 0
 
