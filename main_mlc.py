@@ -403,7 +403,7 @@ def main_worker(args, logger):
             if dist.get_rank() == 0:
                 save_checkpoint({
                     'epoch': epoch + 1,
-                    'arch': args.arch,
+                    'arch': args.backbone,
                     'state_dict': state_dict,
                     'best_mAP': best_mAP,
                     'optimizer' : optimizer.state_dict(),
@@ -413,7 +413,7 @@ def main_worker(args, logger):
             if math.isnan(loss) or math.isnan(loss_ema):
                 save_checkpoint({
                     'epoch': epoch + 1,
-                    'arch': args.arch,
+                    'arch': args.backbone,
                     'state_dict': model.state_dict(),
                     'best_mAP': best_mAP,
                     'optimizer' : optimizer.state_dict(),
