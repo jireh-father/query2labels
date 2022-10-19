@@ -225,6 +225,8 @@ def main_worker(args, logger):
     return
     
 def get_hamming_score(y_true, y_pred):
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
     temp = 0
     for i in range(y_true.shape[0]):
         temp += sum(np.logical_and(y_true[i], y_pred[i])) / sum(np.logical_or(y_true[i], y_pred[i]))
