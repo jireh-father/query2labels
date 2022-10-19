@@ -440,7 +440,11 @@ def main_worker(args, logger):
     
     return 0
 
-
+def get_hamming_score(y_true, y_pred):
+    temp = 0
+    for i in range(y_true.shape[0]):
+        temp += sum(np.logical_and(y_true[i], y_pred[i])) / sum(np.logical_or(y_true[i], y_pred[i]))
+    return temp / y_true.shape[0]
 
 def train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, args, logger):
     scaler = torch.cuda.amp.GradScaler(enabled=args.amp)
@@ -510,6 +514,7 @@ def train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, ar
         if i % args.print_freq == 0:
             progress.display(i, logger)
             logger.info("acc(exact match ratio): {}".format(accuracy_score(target_list, pred_list)))
+            logger.info("acc(hamming score): {}".format(get_hamming_score(target_list, pred_list)))
 
     return losses.avg
 
@@ -598,6 +603,7 @@ def validate(val_loader, model, criterion, args, logger):
             logger.info("  mAP: {}".format(mAP))
             logger.info("   aps: {}".format(np.array2string(aps, precision=5)))
             logger.info("acc(exact match ratio): {}".format(accuracy_score(target_list, pred_list)))
+            logger.info("acc(hamming score): {}".format(get_hamming_score(target_list, pred_list)))
         else:
             mAP = 0
 

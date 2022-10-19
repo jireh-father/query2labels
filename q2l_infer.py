@@ -27,6 +27,7 @@ from models.query2label import build_q2l
 from utils.metric import voc_mAP
 from utils.misc import clean_state_dict
 from utils.slconfig import get_raw_dict
+from sklearn.metrics import accuracy_score
 
 
 def parser_args():
@@ -223,7 +224,11 @@ def main_worker(args, logger):
             .format(mAP=mAP))
     return
     
-
+def get_hamming_score(y_true, y_pred):
+    temp = 0
+    for i in range(y_true.shape[0]):
+        temp += sum(np.logical_and(y_true[i], y_pred[i])) / sum(np.logical_or(y_true[i], y_pred[i]))
+    return temp / y_true.shape[0]
 
 @torch.no_grad()
 def validate(val_loader, model, criterion, args, logger):
@@ -239,9 +244,12 @@ def validate(val_loader, model, criterion, args, logger):
     # switch to evaluate mode
     model.eval()
     saved_data = []
+    target_list = []
+    pred_list = []
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in enumerate(val_loader):
+            target_list += list(target.detach().numpy())
             images = images.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
 
@@ -250,6 +258,9 @@ def validate(val_loader, model, criterion, args, logger):
                 output = model(images)
                 loss = criterion(output, target)
                 output_sm = nn.functional.sigmoid(output)
+
+            preds = torch.round(output_sm)
+            pred_list += list(preds.detach().cpu().numpy())
 
             # record loss
             losses.update(loss.item(), images.size(0))
@@ -289,6 +300,8 @@ def validate(val_loader, model, criterion, args, logger):
             
             logger.info("  mAP: {}".format(mAP))
             logger.info("   aps: {}".format(np.array2string(aps, precision=5)))
+            logger.info("acc(exact match ratio): {}".format(accuracy_score(target_list, pred_list)))
+            logger.info("acc(hamming score): {}".format(get_hamming_score(target_list, pred_list)))
         else:
             mAP = 0
 
