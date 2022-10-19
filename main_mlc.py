@@ -53,7 +53,10 @@ def parser_args():
     parser.add_argument('--optim', default='AdamW', type=str, choices=['AdamW', 'Adam_twd'],
                         help='which optim to use')
 
-    # loss
+    parser.add_argument('--train', action='store_true', default=False)
+    parser.add_argument('--val', action='store_true', default=False)
+
+                        # loss
     parser.add_argument('--eps', default=1e-5, type=float,
                         help='eps for focal loss (default: 1e-5)')
     parser.add_argument('--dtgfl', action='store_true', default=False, 
@@ -339,100 +342,104 @@ def main_worker(args, logger):
     regular_mAP_list = []
     ema_mAP_list = []
     torch.cuda.empty_cache()
-    for epoch in range(args.start_epoch, args.epochs):
-        train_sampler.set_epoch(epoch)
-        if args.ema_epoch == epoch:
-            ema_m = ModelEma(model.module, args.ema_decay)
+
+    if args.train:
+        for epoch in range(args.start_epoch, args.epochs):
+            train_sampler.set_epoch(epoch)
+            if args.ema_epoch == epoch:
+                ema_m = ModelEma(model.module, args.ema_decay)
+                torch.cuda.empty_cache()
             torch.cuda.empty_cache()
-        torch.cuda.empty_cache()
 
-        # train for one epoch
-        loss = train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, args, logger)
-
-        if summary_writer:
-            # tensorboard logger
-            summary_writer.add_scalar('train_loss', loss, epoch)
-            # summary_writer.add_scalar('train_acc1', acc1, epoch)
-            summary_writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], epoch)
-
-        if epoch % args.val_interval == 0:
-
-            # evaluate on validation set
-            loss, mAP = validate(val_loader, model, criterion, args, logger)
-            loss_ema, mAP_ema = validate(val_loader, ema_m.module, criterion, args, logger)
-            losses.update(loss)
-            mAPs.update(mAP)
-            losses_ema.update(loss_ema)
-            mAPs_ema.update(mAP_ema)
-            epoch_time.update(time.time() - end)
-            end = time.time()
-            eta.update(epoch_time.avg * (args.epochs - epoch - 1))
-
-            regular_mAP_list.append(mAP)
-            ema_mAP_list.append(mAP_ema)
-
-            progress.display(epoch, logger)
+            # train for one epoch
+            loss = train(train_loader, model, ema_m, criterion, optimizer, scheduler, epoch, args, logger)
 
             if summary_writer:
                 # tensorboard logger
-                summary_writer.add_scalar('val_loss', loss, epoch)
-                summary_writer.add_scalar('val_mAP', mAP, epoch)
-                summary_writer.add_scalar('val_loss_ema', loss_ema, epoch)
-                summary_writer.add_scalar('val_mAP_ema', mAP_ema, epoch)
+                summary_writer.add_scalar('train_loss', loss, epoch)
+                # summary_writer.add_scalar('train_acc1', acc1, epoch)
+                summary_writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], epoch)
 
-            # remember best (regular) mAP and corresponding epochs
-            if mAP > best_regular_mAP:
-                best_regular_mAP = max(best_regular_mAP, mAP)
-                best_regular_epoch = epoch
-            if mAP_ema > best_ema_mAP:
-                best_ema_mAP = max(mAP_ema, best_ema_mAP)
-            
-            if mAP_ema > mAP:
-                mAP = mAP_ema
-                state_dict = ema_m.module.state_dict()
-            else:
-                state_dict = model.state_dict()
-            is_best = mAP > best_mAP
-            if is_best:
-                best_epoch = epoch
-            best_mAP = max(mAP, best_mAP)
+            if epoch % args.val_interval == 0:
 
-            logger.info("{} | Set best mAP {} in ep {}".format(epoch, best_mAP, best_epoch))
-            logger.info("   | best regular mAP {} in ep {}".format(best_regular_mAP, best_regular_epoch))
+                # evaluate on validation set
+                loss, mAP = validate(val_loader, model, criterion, args, logger)
+                loss_ema, mAP_ema = validate(val_loader, ema_m.module, criterion, args, logger)
+                losses.update(loss)
+                mAPs.update(mAP)
+                losses_ema.update(loss_ema)
+                mAPs_ema.update(mAP_ema)
+                epoch_time.update(time.time() - end)
+                end = time.time()
+                eta.update(epoch_time.avg * (args.epochs - epoch - 1))
 
-            if dist.get_rank() == 0:
-                save_checkpoint({
-                    'epoch': epoch + 1,
-                    'arch': args.backbone,
-                    'state_dict': state_dict,
-                    'best_mAP': best_mAP,
-                    'optimizer' : optimizer.state_dict(),
-                }, is_best=is_best, filename=os.path.join(args.output, 'checkpoint.pth.tar'))
-            # filename=os.path.join(args.output, 'checkpoint_{:04d}.pth.tar'.format(epoch))
+                regular_mAP_list.append(mAP)
+                ema_mAP_list.append(mAP_ema)
 
-            if math.isnan(loss) or math.isnan(loss_ema):
-                save_checkpoint({
-                    'epoch': epoch + 1,
-                    'arch': args.backbone,
-                    'state_dict': model.state_dict(),
-                    'best_mAP': best_mAP,
-                    'optimizer' : optimizer.state_dict(),
-                }, is_best=is_best, filename=os.path.join(args.output, 'checkpoint_nan.pth.tar'))
-                logger.info('Loss is NaN, break')
-                sys.exit(1)
+                progress.display(epoch, logger)
+
+                if summary_writer:
+                    # tensorboard logger
+                    summary_writer.add_scalar('val_loss', loss, epoch)
+                    summary_writer.add_scalar('val_mAP', mAP, epoch)
+                    summary_writer.add_scalar('val_loss_ema', loss_ema, epoch)
+                    summary_writer.add_scalar('val_mAP_ema', mAP_ema, epoch)
+
+                # remember best (regular) mAP and corresponding epochs
+                if mAP > best_regular_mAP:
+                    best_regular_mAP = max(best_regular_mAP, mAP)
+                    best_regular_epoch = epoch
+                if mAP_ema > best_ema_mAP:
+                    best_ema_mAP = max(mAP_ema, best_ema_mAP)
+
+                if mAP_ema > mAP:
+                    mAP = mAP_ema
+                    state_dict = ema_m.module.state_dict()
+                else:
+                    state_dict = model.state_dict()
+                is_best = mAP > best_mAP
+                if is_best:
+                    best_epoch = epoch
+                best_mAP = max(mAP, best_mAP)
+
+                logger.info("{} | Set best mAP {} in ep {}".format(epoch, best_mAP, best_epoch))
+                logger.info("   | best regular mAP {} in ep {}".format(best_regular_mAP, best_regular_epoch))
+
+                if dist.get_rank() == 0:
+                    save_checkpoint({
+                        'epoch': epoch + 1,
+                        'arch': args.backbone,
+                        'state_dict': state_dict,
+                        'best_mAP': best_mAP,
+                        'optimizer' : optimizer.state_dict(),
+                    }, is_best=is_best, filename=os.path.join(args.output, 'checkpoint.pth.tar'))
+                # filename=os.path.join(args.output, 'checkpoint_{:04d}.pth.tar'.format(epoch))
+
+                if math.isnan(loss) or math.isnan(loss_ema):
+                    save_checkpoint({
+                        'epoch': epoch + 1,
+                        'arch': args.backbone,
+                        'state_dict': model.state_dict(),
+                        'best_mAP': best_mAP,
+                        'optimizer' : optimizer.state_dict(),
+                    }, is_best=is_best, filename=os.path.join(args.output, 'checkpoint_nan.pth.tar'))
+                    logger.info('Loss is NaN, break')
+                    sys.exit(1)
 
 
-            # early stop
-            if args.early_stop:
-                if best_epoch >= 0 and epoch - max(best_epoch, best_regular_epoch) > 8:
-                    if len(ema_mAP_list) > 1 and ema_mAP_list[-1] < best_ema_mAP:
-                        logger.info("epoch - best_epoch = {}, stop!".format(epoch - best_epoch))
-                        if dist.get_rank() == 0 and args.kill_stop:
-                            filename = sys.argv[0].split(' ')[0].strip()
-                            killedlist = kill_process(filename, os.getpid())
-                            logger.info("Kill all process of {}: ".format(filename) + " ".join(killedlist)) 
+                # early stop
+                if args.early_stop:
+                    if best_epoch >= 0 and epoch - max(best_epoch, best_regular_epoch) > 8:
+                        if len(ema_mAP_list) > 1 and ema_mAP_list[-1] < best_ema_mAP:
+                            logger.info("epoch - best_epoch = {}, stop!".format(epoch - best_epoch))
+                            if dist.get_rank() == 0 and args.kill_stop:
+                                filename = sys.argv[0].split(' ')[0].strip()
+                                killedlist = kill_process(filename, os.getpid())
+                                logger.info("Kill all process of {}: ".format(filename) + " ".join(killedlist))
                         break
 
+    if not args.train and args.val:
+        validate(val_loader, model, criterion, args, logger)
     print("Best mAP:", best_mAP)
 
     if summary_writer:
