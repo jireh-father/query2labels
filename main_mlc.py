@@ -416,6 +416,7 @@ def main_worker(args, logger):
                 # filename=os.path.join(args.output, 'checkpoint_{:04d}.pth.tar'.format(epoch))
 
                 if math.isnan(loss) or math.isnan(loss_ema):
+                    logger.info('Loss is NaN, break')
                     save_checkpoint({
                         'epoch': epoch + 1,
                         'arch': args.backbone,
@@ -423,7 +424,6 @@ def main_worker(args, logger):
                         'best_mAP': best_mAP,
                         'optimizer' : optimizer.state_dict(),
                     }, is_best=is_best, filename=os.path.join(args.output, 'checkpoint_nan.pth.tar'))
-                    logger.info('Loss is NaN, break')
                     sys.exit(1)
 
 
