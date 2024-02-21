@@ -202,6 +202,15 @@ def main():
         torch.manual_seed(args.seed)
         np.random.seed(args.seed)
 
+    if args.dataname == 'tagger':
+        label_data = json.load(open(args.label_file, encoding='utf-8'))
+        tag_set = set()
+        for file_name in label_data:
+            tags = ", ".split(label_data[file_name]["tags"])
+            tag_set.update(tags)
+
+        args.num_class = len(tag_set)
+
     
     torch.cuda.set_device(args.local_rank)
     print('| distributed init (local_rank {}): {}'.format(
@@ -606,8 +615,9 @@ def validate(val_loader, model, criterion, args, logger):
         if dist.get_rank() == 0:
             print("Calculating mAP:")
             filenamelist = ['saved_data_tmp.{}.txt'.format(ii) for ii in range(dist.get_world_size())]
-            metric_func = voc_mAP                
-            mAP, aps = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist], args.num_class, return_each=True)
+            metric_func = voc_mAP
+            num_class = args.num_class if args.num_class else val_loader.dataset.num_classes
+            mAP, aps = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist], num_class, return_each=True)
             
             logger.info("  mAP: {}".format(mAP))
             logger.info("   aps: {}".format(np.array2string(aps, precision=5)))

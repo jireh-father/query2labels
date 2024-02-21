@@ -3,6 +3,8 @@ from dataset.cocodataset import CoCoDataset
 from utils.cutout import SLCutoutPIL
 from randaugment import RandAugment
 import os.path as osp
+import json
+import random
 
 def get_datasets(args):
     if args.orid_norm:
@@ -59,6 +61,21 @@ def get_datasets(args):
         val_dataset = FashionAttributeMultiLabelDataset(
             val_label_file, args.label_type, val_dataset_dir, test_data_transform
         )
+    elif args.dataname == "tagger":
+        from dataset.tagger import Tagger
+        label_dict = json.load(open(args.label_file, encoding='utf-8'))
+        # label_dict format
+        # {"file_name1": {"tags": "tag1, tag2, tag3"}, ...}
+        # split label_dict into train and val using shuffle, val has 10% of the data
+        label_items = list(label_dict.items())
+        random.shuffle(label_items)
+        num_train = int(len(label_items) * 0.9)
+        train_label_dict = dict(label_items[:num_train])
+        val_label_dict = dict(label_items[num_train:])
+        print("make train dataset")
+        train_dataset = Tagger(args.dataset_dir, train_label_dict, train_data_transform)
+        print("make val dataset")
+        val_dataset = Tagger(args.dataset_dir, val_label_dict, test_data_transform)
     else:
         raise NotImplementedError("Unknown dataname %s" % args.dataname)
 
