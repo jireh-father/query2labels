@@ -206,7 +206,7 @@ def main():
         label_data = json.load(open(args.label_file, encoding='utf-8'))
         tag_set = set()
         for file_name in label_data:
-            tags = ", ".split(label_data[file_name]["tags"])
+            tags = label_data[file_name]["tags"].split(", ")
             tag_set.update(tags)
 
         args.num_class = len(tag_set)

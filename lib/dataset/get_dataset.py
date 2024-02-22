@@ -65,10 +65,9 @@ def get_datasets(args):
         from dataset.tagger import Tagger
         label_dict = json.load(open(args.label_file, encoding='utf-8'))
 
-        label_data = json.load(open(args.label_file, encoding='utf-8'))
         tag_set = set()
-        for file_name in label_data:
-            tags = ", ".split(label_data[file_name]["tags"])
+        for file_name in label_dict:
+            tags = label_dict[file_name]["tags"].split(", ")
             tag_set.update(tags)
         tag_list = list(tag_set)
         tag_list.sort()
