@@ -321,7 +321,8 @@ def main_worker(args, logger):
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=args.batch_size // dist.get_world_size(), shuffle=False,
         num_workers=args.workers, pin_memory=True, sampler=val_sampler)
-
+    print("len(train_loader):", len(train_loader))
+    print("len(val_loader):", len(val_loader))
 
     if args.evaluate:
         _, mAP = validate(val_loader, model, criterion, args, logger)
