@@ -203,10 +203,11 @@ def main():
         np.random.seed(args.seed)
 
     if args.dataname == 'tagger':
+        from dataset import tagger
         label_data = json.load(open(args.label_file, encoding='utf-8'))
         tag_set = set()
         for file_name in label_data:
-            tags = label_data[file_name]["tags"].split(", ")
+            tags = [v for v in label_data[file_name]["tags"].split(", ") if v in tagger.val_to_key_map]
             tag_set.update(tags)
 
         args.num_class = len(tag_set)

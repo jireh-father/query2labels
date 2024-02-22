@@ -62,12 +62,12 @@ def get_datasets(args):
             val_label_file, args.label_type, val_dataset_dir, test_data_transform
         )
     elif args.dataname == "tagger":
-        from dataset.tagger import Tagger
+        from dataset import tagger
         label_dict = json.load(open(args.label_file, encoding='utf-8'))
 
         tag_set = set()
         for file_name in label_dict:
-            tags = label_dict[file_name]["tags"].split(", ")
+            tags = [v for v in label_dict[file_name]["tags"].split(", ") if v in tagger.val_to_key_map]
             tag_set.update(tags)
         tag_list = list(tag_set)
         tag_list.sort()
@@ -84,9 +84,9 @@ def get_datasets(args):
         train_label_dict = dict(label_items[:num_train])
         val_label_dict = dict(label_items[num_train:])
         print("make train dataset")
-        train_dataset = Tagger(args.dataset_dir, train_label_dict, train_data_transform, tag_to_cls_idx_map)
+        train_dataset = tagger.Tagger(args.dataset_dir, train_label_dict, train_data_transform, tag_to_cls_idx_map)
         print("make val dataset")
-        val_dataset = Tagger(args.dataset_dir, val_label_dict, test_data_transform, tag_to_cls_idx_map)
+        val_dataset = tagger.Tagger(args.dataset_dir, val_label_dict, test_data_transform, tag_to_cls_idx_map)
     else:
         raise NotImplementedError("Unknown dataname %s" % args.dataname)
 
