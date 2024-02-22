@@ -83,6 +83,23 @@ def get_datasets(args):
         num_train = int(len(label_items) * 0.9)
         train_label_dict = dict(label_items[:num_train])
         val_label_dict = dict(label_items[num_train:])
+
+        while True:
+            tag_set = set()
+            for file_name in train_label_dict:
+                tags = [v for v in train_label_dict[file_name]["tags"].split(", ") if v in tagger.val_to_key_map]
+                tag_set.update(tags)
+            if len(tags) != args.num_class:
+                continue
+
+            tag_set = set()
+            for file_name in val_label_dict:
+                tags = [v for v in val_label_dict[file_name]["tags"].split(", ") if v in tagger.val_to_key_map]
+                tag_set.update(tags)
+            if len(tags) != args.num_class:
+                continue
+            break
+
         print("make train dataset")
         train_dataset = tagger.Tagger(args.dataset_dir, train_label_dict, train_data_transform, tag_to_cls_idx_map)
         print("make val dataset")
