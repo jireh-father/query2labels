@@ -52,8 +52,8 @@ class Tagger(data.Dataset):
         tag_set = set()
         self.transform = transform
         for file_name in label_data:
-            file_name = f"{file_name}.jpg"
             tags = [v for v in ", ".split(label_data[file_name]["tags"]) if v in val_to_key_map]
+            file_name = f"{file_name}.jpg"
             file_name_to_tags[file_name] = tags
             tag_set.update(tags)
 
