@@ -623,7 +623,8 @@ def validate(val_loader, model, criterion, args, logger):
             mAP, aps = metric_func([os.path.join(args.output, _filename) for _filename in filenamelist], num_class, return_each=True)
             
             logger.info("  mAP: {}".format(mAP))
-            logger.info("   aps: {}".format(np.array2string(aps, precision=5)))
+            aps = zip(aps, val_loader.dataset.tag_to_cls_idx_map.keys())
+            logger.info("   aps: {}".format(aps))
             logger.info("acc(exact match ratio): {}".format(accuracy_score(target_list, pred_list)))
             logger.info("acc(hamming score): {}".format(get_hamming_score(target_list, pred_list)))
         else:
