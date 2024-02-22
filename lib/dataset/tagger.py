@@ -87,7 +87,6 @@ class Tagger(data.Dataset):
                 target = self.labels[index]
                 path = os.path.join(self.image_dir, file_name)
                 sample = Image.open(path).convert("RGB")
-                sample = np.array(sample)
                 if self.transform is not None:
                     sample = self.transform(sample)
                 return sample, np.array(target, dtype=np.float32)
