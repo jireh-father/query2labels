@@ -1,8 +1,10 @@
 import torch.utils.data as data
+import traceback
 import json
 import os
 import numpy as np
 import random
+from PIL import Image
 
 val_to_key_map = {
     "bob hair": "hair_length",
@@ -84,13 +86,13 @@ class Tagger(data.Dataset):
                 file_name = self.images[index]
                 target = self.labels[index]
                 path = os.path.join(self.image_dir, file_name)
-                sample = self.loader(path)
+                sample = Image.open(path).convert("RGB")
+                sample = np.array(sample)
                 if self.transform is not None:
                     sample = self.transform(sample)
                 return sample, np.array(target, dtype=np.float32)
             except Exception as e:
-                # traceback.print_exc()
-                print(str(e), file_name)
+                traceback.print_exc()
                 index = random.randint(0, len(self) - 1)
 
     def __len__(self):
