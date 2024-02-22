@@ -5,6 +5,7 @@ from randaugment import RandAugment
 import os.path as osp
 import json
 import random
+from collections import defaultdict
 
 def get_datasets(args):
     if args.orid_norm:
@@ -63,22 +64,26 @@ def get_datasets(args):
         )
     elif args.dataname == "tagger":
         from dataset import tagger
-        label_dict = json.load(open(args.label_file, encoding='utf-8'))
+        label_data = json.load(open(args.label_file, encoding='utf-8'))
 
         tag_set = set()
-        for file_name in label_dict:
-            tags = [v for v in label_dict[file_name]["tags"].split(", ") if v in tagger.val_to_key_map]
+        tag_stat = defaultdict(int)
+        for file_name in label_data:
+            tags = tagger.split_tags(label_data[file_name]["tags"])
             tag_set.update(tags)
+            for tag in tags:
+                tag_stat[tag] += 1
         tag_list = list(tag_set)
         tag_list.sort()
         tag_to_cls_idx_map = {tag_list[i]: i for i in range(len(tag_list))}
         print("tag_to_cls_idx_map", tag_to_cls_idx_map)
+        print("tag_stat", tag_stat)
 
 
         # label_dict format
         # {"file_name1": {"tags": "tag1, tag2, tag3"}, ...}
         # split label_dict into train and val using shuffle, val has 10% of the data
-        label_items = list(label_dict.items())
+        label_items = list(label_data.items())
         random.shuffle(label_items)
         num_train = int(len(label_items) * 0.9)
         train_label_dict = dict(label_items[:num_train])

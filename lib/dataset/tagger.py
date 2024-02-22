@@ -12,22 +12,22 @@ val_to_key_map = {
     "medium hair": "hair_length",
     "long hair": "hair_length",
     "no-curl": "curl_type",
-    "c-curl perm": "curl_type",
+    # "c-curl perm": "curl_type",
     "s-curl perm": "curl_type",
-    "s3-curl perm": "curl_type",
-    "inner c-curl perm": "curl_type",
-    "outer c-curl perm": "curl_type",
+    # "s3-curl perm": "curl_type",
+    # "inner c-curl perm": "curl_type",
+    # "outer c-curl perm": "curl_type",
     "cs-curl perm": "curl_type",
-    "ss-curl perm": "curl_type",
+    # "ss-curl perm": "curl_type",
     "c-shaped curl perm": "curl_type",
     "s-shaped curl perm": "curl_type",
-    "s3-shaped curl perm": "curl_type",
-    "inner c-shaped curl perm": "curl_type",
-    "outer c-shaped curl perm": "curl_type",
+    # "s3-shaped curl perm": "curl_type",
+    # "inner c-shaped curl perm": "curl_type",
+    # "outer c-shaped curl perm": "curl_type",
     "cs-shaped curl perm": "curl_type",
-    "ss-shaped curl perm": "curl_type",
-    "thin curl": "curl_width",
-    "thick curl": "curl_width",
+    # "ss-shaped curl perm": "curl_type",
+    # "thin curl": "curl_width",
+    # "thick curl": "curl_width",
     "no-layered hair": "cut",
     "layered hair": "cut",
     "hush cut": "hair_style_name",
@@ -40,11 +40,23 @@ val_to_key_map = {
     "full bangs": "bangs",
     "side bangs": "bangs",
     "see-through bangs": "bangs",
-    "choppy bangs": "bangs",
+    # "choppy bangs": "bangs",
     "faceline bangs": "bangs",
     "thin hair": "hair_thickness",
     "thick hair": "hair_thickness",
 }
+
+
+def split_tags(tag_str):
+    tags = []
+    for v in tag_str.split(", "):
+        if v in val_to_key_map:
+            tags.append(v)
+        else:
+            if "c-shaped curl perm" or "c-curl perm" in v:
+                tags.append("c-curl perm")
+
+    return tags
 
 
 class Tagger(data.Dataset):
@@ -54,7 +66,7 @@ class Tagger(data.Dataset):
         file_name_to_tags = {}
         self.transform = transform
         for file_name in label_data:
-            tags = [v for v in label_data[file_name]["tags"].split(", ") if v in val_to_key_map]
+            tags = split_tags(label_data[file_name]["tags"])
             file_name_to_tags[f"{file_name}.jpg"] = tags
 
         self.tag_to_cls_idx_map = tag_to_cls_idx_map
