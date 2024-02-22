@@ -73,6 +73,7 @@ def get_datasets(args):
         tag_list = list(tag_set)
         tag_list.sort()
         tag_to_cls_idx_map = {tag_list[i]: i for i in range(len(tag_list))}
+        print("tag_to_cls_idx_map", tag_to_cls_idx_map)
 
 
         # label_dict format
