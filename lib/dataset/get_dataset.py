@@ -90,6 +90,10 @@ def get_datasets(args):
                 tags = [v for v in train_label_dict[file_name]["tags"].split(", ") if v in tagger.val_to_key_map]
                 tag_set.update(tags)
             if len(tags) != args.num_class:
+                random.shuffle(label_items)
+                num_train = int(len(label_items) * 0.9)
+                train_label_dict = dict(label_items[:num_train])
+                val_label_dict = dict(label_items[num_train:])
                 continue
 
             tag_set = set()
@@ -97,6 +101,10 @@ def get_datasets(args):
                 tags = [v for v in val_label_dict[file_name]["tags"].split(", ") if v in tagger.val_to_key_map]
                 tag_set.update(tags)
             if len(tags) != args.num_class:
+                random.shuffle(label_items)
+                num_train = int(len(label_items) * 0.9)
+                train_label_dict = dict(label_items[:num_train])
+                val_label_dict = dict(label_items[num_train:])
                 continue
             break
 
