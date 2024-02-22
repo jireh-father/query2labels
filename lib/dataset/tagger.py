@@ -4,6 +4,45 @@ import os
 import numpy as np
 import random
 
+val_to_key_map = {
+    "bob hair": "hair_length",
+    "short hair": "hair_length",
+    "medium hair": "hair_length",
+    "long hair": "hair_length",
+    "no-curl": "curl_type",
+    "c-curl perm": "curl_type",
+    "s-curl perm": "curl_type",
+    "s3-curl perm": "curl_type",
+    "inner c-curl perm": "curl_type",
+    "outer c-curl perm": "curl_type",
+    "cs-curl perm": "curl_type",
+    "ss-curl perm": "curl_type",
+    "c-shaped curl perm": "curl_type",
+    "s-shaped curl perm": "curl_type",
+    "s3-shaped curl perm": "curl_type",
+    "inner c-shaped curl perm": "curl_type",
+    "outer c-shaped curl perm": "curl_type",
+    "cs-shaped curl perm": "curl_type",
+    "ss-shaped curl perm": "curl_type",
+    "thin curl": "curl_width",
+    "thick curl": "curl_width",
+    "no-layered hair": "cut",
+    "layered hair": "cut",
+    "hush cut": "hair_style_name",
+    "tassel cut": "hair_style_name",
+    "hug perm": "hair_style_name",
+    "build perm": "hair_style_name",
+    "slick cut": "hair_style_name",
+    "short cut": "hair_style_name",
+    "layered cut": "hair_style_name",
+    "full bangs": "bangs",
+    "side bangs": "bangs",
+    "see-through bangs": "bangs",
+    "choppy bangs": "bangs",
+    "faceline bangs": "bangs",
+    "thin hair": "hair_thickness",
+    "thick hair": "hair_thickness",
+}
 
 class Tagger(data.Dataset):
     """__init__ and __len__ functions are the same as in TorchvisionDataset"""
@@ -13,7 +52,8 @@ class Tagger(data.Dataset):
         tag_set = set()
         self.transform = transform
         for file_name in label_data:
-            tags = ", ".split(label_data[file_name]["tags"])
+            file_name = f"{file_name}.jpg"
+            tags = [v for v in ", ".split(label_data[file_name]["tags"]) if v in val_to_key_map]
             file_name_to_tags[file_name] = tags
             tag_set.update(tags)
 
