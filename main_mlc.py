@@ -210,6 +210,7 @@ def main():
             tag_set.update(tags)
 
         args.num_class = len(tag_set)
+        print("num_class:", args.num_class)
 
     
     torch.cuda.set_device(args.local_rank)

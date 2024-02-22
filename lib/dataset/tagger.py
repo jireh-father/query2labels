@@ -48,23 +48,16 @@ val_to_key_map = {
 class Tagger(data.Dataset):
     """__init__ and __len__ functions are the same as in TorchvisionDataset"""
 
-    def __init__(self, image_dir, label_data, transform=None):
+    def __init__(self, image_dir, label_data, transform, tag_to_cls_idx_map):
         file_name_to_tags = {}
-        tag_set = set()
         self.transform = transform
         for file_name in label_data:
             tags = [v for v in label_data[file_name]["tags"].split(", ") if v in val_to_key_map]
-            file_name = f"{file_name}.jpg"
-            file_name_to_tags[file_name] = tags
-            tag_set.update(tags)
+            file_name_to_tags[f"{file_name}.jpg"] = tags
 
-        # sort tag_set
-        tag_list = list(tag_set)
-        tag_list.sort()
-        tag_to_cls_idx_map = {tag_list[i]: i for i in range(len(tag_list))}
         self.tag_to_cls_idx_map = tag_to_cls_idx_map
         self.image_dir = image_dir
-        self.num_classes = len(tag_list)
+
         images = []
         labels = []
         num_no_images = 0
@@ -75,12 +68,11 @@ class Tagger(data.Dataset):
                 continue
             images.append(file_name)
             tags = file_name_to_tags[file_name]
-            label = [0] * len(tag_list)
+            label = [0] * len(self.tag_to_cls_idx_map)
             for tag in tags:
                 label[tag_to_cls_idx_map[tag]] = 1
             labels.append(label)
 
-        print(f"num of classes: {len(tag_list)}")
         print(f"num_no_images: {num_no_images}")
         print(f"num_images: {len(images)}")
         self.images = images
