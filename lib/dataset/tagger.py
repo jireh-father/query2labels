@@ -44,6 +44,7 @@ val_to_key_map = {
     "thick hair": "hair_thickness",
 }
 
+
 class Tagger(data.Dataset):
     """__init__ and __len__ functions are the same as in TorchvisionDataset"""
 
@@ -72,7 +73,7 @@ class Tagger(data.Dataset):
             if not os.path.isfile(image_path):
                 num_no_images += 1
                 continue
-            images.append(f"{file_name}.jpg")
+            images.append(file_name)
             tags = file_name_to_tags[file_name]
             label = [0] * len(tag_list)
             for tag in tags:
