@@ -53,7 +53,7 @@ def split_tags(tag_str):
         if v in val_to_key_map:
             tags.append(v)
         else:
-            if "c-shaped curl perm" or "c-curl perm" in v:
+            if v in ["c-shaped curl perm", "c-curl perm"]:
                 tags.append("c-curl perm")
 
     return tags
