@@ -624,7 +624,9 @@ def validate(val_loader, model, criterion, args, logger):
             
             logger.info("  mAP: {}".format(mAP))
             aps = zip(aps, val_loader.dataset.tag_to_cls_idx_map.keys())
-            logger.info("   aps: {}".format(aps))
+            # aps to string
+            aps_str = "  ".join(["{}: {:.5f}".format(k, v) for v, k in aps])
+            logger.info("   aps: {}".format(aps_str))
             logger.info("acc(exact match ratio): {}".format(accuracy_score(target_list, pred_list)))
             logger.info("acc(hamming score): {}".format(get_hamming_score(target_list, pred_list)))
         else:
